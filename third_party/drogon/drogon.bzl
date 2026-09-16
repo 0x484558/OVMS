@@ -178,7 +178,7 @@ cmake(
         "--",  # <- Pass remaining options to the native tool.
         # https://github.com/bazelbuild/rules_foreign_cc/issues/329
         # there is no elegant parallel compilation support
-        "-j 6",
+        "-j 1",
     ],
     cache_entries = {{ 
         {cache_entries}

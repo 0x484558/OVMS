@@ -70,7 +70,7 @@ def _impl(repository_ctx):
         "ENABLE_TESTS": "OFF",
         "ENABLE_XGRAMMAR": "ON",
         """
-        jobs_param = "\"-j 8\"" # on Windows we do not need to specify number of jobs, it's set to all available cores number
+        jobs_param = "\"-j 1\"" # keep nested CMake builds within the four-action machine cap
     else:
         lib_name = "libopenvino_genai"
         out_dll_dir_win = ""
@@ -89,7 +89,7 @@ def _impl(repository_ctx):
         "ENABLE_TESTS": "OFF",
         "ENABLE_XGRAMMAR": "ON",
         """
-        jobs_param = "\"-j 8\"" # on Linux we need to specify jobs number, by default it's set to 1
+        jobs_param = "\"-j 1\"" # keep nested CMake builds within the four-action machine cap
 
     # Note we need to escape '{/}' by doubling them due to call to format
     build_file_content = """

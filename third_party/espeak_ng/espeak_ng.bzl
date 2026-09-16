@@ -63,7 +63,7 @@ def _impl(repository_ctx):
             "CMAKE_C_FLAGS": " /DN_PATH_HOME=1024",
             "WIN32": "True",
         """
-        jobs_param = "\"-j 8\""
+        jobs_param = "\"-j 1\""
     else:
         # On Linux espeak-ng produces libespeak-ng.so.<ABI>.
         out_shared = "out_shared_libs = [\"libespeak-ng.so.1\"],"
@@ -74,7 +74,7 @@ def _impl(repository_ctx):
             "CMAKE_POSITION_INDEPENDENT_CODE": "ON",
             "CMAKE_C_FLAGS": " -fPIC -Wno-error -DN_PATH_HOME=1024",
         """
-        jobs_param = "\"-j 8\""
+        jobs_param = "\"-j 1\""
 
     # NOTE: braces inside the format string are doubled to escape them.
     build_file_content = """

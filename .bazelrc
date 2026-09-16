@@ -80,8 +80,9 @@ build --incompatible_strict_action_env
 build --cxxopt=-DOVMS_DUMP_TO_FILE=0
 build --remote_upload_local_results=true
 
-build:avx_win --copt=/arch=AVX
-build:avx2_win --copt=/arch=AVX2
+build:avx_win --copt=/arch:AVX
+build:avx2_win --copt=/arch:AVX2
+build:avx2_win --host_copt=/arch:AVX2
 
 # Linux settings #######################################################################################################
 # LLVM, MLIR and TF require C++14, we use C++17 in project

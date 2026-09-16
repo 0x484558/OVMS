@@ -75,7 +75,7 @@ cmake(
         # https://github.com/bazelbuild/rules_foreign_cc/issues/329
         # there is no elegant parallel compilation support
         "VERBOSE=1",
-        "-j 32",
+        "-j 1",
     ],
     cache_entries = {{
         "BUILD_ONLY": "s3", # core builds always
