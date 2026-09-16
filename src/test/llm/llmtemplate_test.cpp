@@ -416,7 +416,7 @@ TEST_F(LLMChatTemplateTest, ChatTemplateTojsonNoHtmlEscaping) {
         "{%- set ns = namespace(tool_text='<tools>') %}"
         "{%- if tools %}"
         "  {%- for tool in tools %}"
-        "    {%- set ns.tool_text = ns.tool_text + '\\n' + (tool | tojson) %}"
+        "    {%- set ns.tool_text = ns.tool_text + '\\n' + (tool | tojson(ensure_ascii=False)) %}"
         "  {%- endfor %}"
         "  {%- set ns.tool_text = ns.tool_text + '\\n</tools>' %}"
         "{%- endif %}"

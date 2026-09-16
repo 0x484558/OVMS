@@ -157,6 +157,7 @@ extern "C" PYTHON_RUNTIME_EXPORT bool OVMS_validatePythonEnvironment(const char*
     // - The pointer remains valid until the next write to lastError on the
     //   same thread (or thread shutdown).
     static thread_local std::string lastError;
+    lastError.clear();
     if (errorMessage != nullptr) {
         *errorMessage = nullptr;
     }
@@ -177,13 +178,21 @@ extern "C" PYTHON_RUNTIME_EXPORT bool OVMS_validatePythonEnvironment(const char*
     //     return false;
     // }
 
-    bool ownsInterpreter = false;
+    // CPython is process-global and cannot be safely initialized, finalized,
+    // and initialized again in the same process.  The runtime loader calls
+    // this validator immediately before PythonInterpreterModule::start(),
+    // which is the component that owns interpreter lifetime.  Initializing a
+    // temporary interpreter here would therefore make the real module start
+    // fail on its first initialization attempt (Python 3.12 reports, for
+    // example, "failed to get the Python codec of the filesystem encoding").
+    // Defer import validation to PythonInterpreterModule::start() when the
+    // process has no interpreter yet.
+    if (!Py_IsInitialized()) {
+        return true;
+    }
+
     bool success = false;
     try {
-        if (!Py_IsInitialized()) {
-            py::initialize_interpreter();
-            ownsInterpreter = true;
-        }
         {
             py::gil_scoped_acquire acquire;
             // Validate that OVMS Python bindings are importable and executable.
@@ -196,10 +205,6 @@ extern "C" PYTHON_RUNTIME_EXPORT bool OVMS_validatePythonEnvironment(const char*
         lastError = e.what();
     } catch (...) {
         lastError = "Unknown python runtime validation error";
-    }
-
-    if (ownsInterpreter && Py_IsInitialized()) {
-        py::finalize_interpreter();
     }
 
     if (success) {
@@ -313,7 +318,14 @@ extern "C" PYTHON_RUNTIME_EXPORT bool OVMS_applyChatTemplateRuntime(
                 jinja_env.globals["raise_exception"] = raise_exception
                 jinja_env.globals["strftime_now"] = strftime_now
                 jinja_env.filters["from_json"] = json.loads
-                jinja_env.filters["tojson"] = lambda value, indent=None: json.dumps(value, ensure_ascii=False, indent=indent)
+                # Match Transformers' tojson filter signature while returning plain str instead of Markup.
+                # Granite 4.2's official template passes ensure_ascii=False explicitly; accepting the
+                # complete Transformers signature keeps that template unchanged and preserves the
+                # existing HTML-escaping workaround for prompt construction.
+                def tojson(value, ensure_ascii=False, indent=None, separators=None, sort_keys=False):
+                    return json.dumps(value, ensure_ascii=ensure_ascii, indent=indent,
+                                      separators=separators, sort_keys=sort_keys)
+                jinja_env.filters["tojson"] = tojson
 
                 tokenizer_config_file = Path(templates_directory + "/tokenizer_config.json")
                 if tokenizer_config_file.is_file():
@@ -485,7 +497,14 @@ extern "C" PYTHON_RUNTIME_EXPORT bool OVMS_createPreparedChatTemplateRuntime(
                 jinja_env.globals["raise_exception"] = raise_exception
                 jinja_env.globals["strftime_now"] = strftime_now
                 jinja_env.filters["from_json"] = json.loads
-                jinja_env.filters["tojson"] = lambda value, indent=None: json.dumps(value, ensure_ascii=False, indent=indent)
+                # Match Transformers' tojson filter signature while returning plain str instead of Markup.
+                # Granite 4.2's official template passes ensure_ascii=False explicitly; accepting the
+                # complete Transformers signature keeps that template unchanged and preserves the
+                # existing HTML-escaping workaround for prompt construction.
+                def tojson(value, ensure_ascii=False, indent=None, separators=None, sort_keys=False):
+                    return json.dumps(value, ensure_ascii=ensure_ascii, indent=indent,
+                                      separators=separators, sort_keys=sort_keys)
+                jinja_env.filters["tojson"] = tojson
 
                 tool_chat_template = None
 
